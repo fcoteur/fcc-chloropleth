@@ -1,3 +1,47 @@
+let educationUrl = 'https://raw.githubusercontent.com/no-stack-dub-sack/testable-projects-fcc/master/src/data/choropleth_map/for_user_education.json'
+let countiesUrl = 'https://raw.githubusercontent.com/no-stack-dub-sack/testable-projects-fcc/master/src/data/choropleth_map/counties.json'
+
+function loadData(src) {
+    return new Promise(function(resolve, reject){
+        let data = new Map();
+        data.title = "Education rate (%)";
+        req = new XMLHttpRequest();
+        req.open("GET",src,true);
+        req.send();
+        req.onload = () => {
+        json=JSON.parse(req.responseText);
+        data = json.map(d => {
+            data.set([d.fips, d.bachelorsOrHigher])
+        });
+        resolve(data);
+        }
+    })
+}
+let promise = loadData(educationUrl);
+
+promise.then(
+    data => console.log(data)
+    
+)
+
+/*
+  function loadTopo(src) {
+    let topo = {};
+    req = new XMLHttpRequest();
+    req.open("GET",src,true);
+    req.send();
+    req.onload = () => {
+        json=JSON.parse(req.responseText);
+        topo = json.map(d => {
+            topo.push(d)
+        })
+        return topo;
+    }  
+  }
+  
+  const topo = await getTopo();
+
+
 const width = 960;
 const height = 600;
 const path = d3.geoPath();
@@ -11,40 +55,6 @@ const format = d3.format("")
 const x = d3.scaleLinear()
     .domain(d3.extent(color.domain()))
     .rangeRound([600, 860]);
-
-
-function getData() {
-  let data = new Map();
-  data.title = "Education rate (%)";
-  req = new XMLHttpRequest();
-    req.open("GET",'https://raw.githubusercontent.com/no-stack-dub-sack/testable-projects-fcc/master/src/data/choropleth_map/for_user_education.json',true);
-    req.send();
-    req.onload = () => {
-    json=JSON.parse(req.responseText);
-    data = json.map(d => {
-      data.set([d.fips, d.bachelorsOrHigher])
-    });
-    return rp(data)
-  }
-}
-
-const data = await getData();
-
-function getTopo() {
-let topo = {};
-req = new XMLHttpRequest();
-req.open("GET",'https://raw.githubusercontent.com/no-stack-dub-sack/testable-projects-fcc/master/src/data/choropleth_map/counties.json',true);
-req.send();
-req.onload = () => {
-  json=JSON.parse(req.responseText);
-  topo = json.map(d => {
-      topo.push(d)
-  })
-  return rp(topo);
-}  
-}
-
-const topo = await getTopo();
 
 const svg = d3.select('#map').append('svg')
     .attr('width', width)
@@ -95,3 +105,4 @@ svg.append("path")
     .attr("stroke-linejoin", "round")
     .attr("d", path);
 
+*/
