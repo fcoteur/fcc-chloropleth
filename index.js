@@ -1,6 +1,6 @@
 let data = new Map();
 let us = {};
-data.title = "Education rate (%)";
+data.title = "% with a bachelor's degree or higher";
 
 Promise.all([loadTopo(), loadData()])
    .then(
@@ -33,20 +33,20 @@ function loadTopo() {
     })
 }
 function renderD3() {
-    console.log('starting!')
     const width = 960;
     const height = 600;
     const path = d3.geoPath();
 
     const color = d3.scaleQuantize()
-        .domain([1, 10])
-        .range(d3.schemeBlues[9])
+        .domain([1, 100])
+        .range(d3.schemeReds[9])
 
     const format = d3.format("")
-
+    
+    //scale for positioning of legend
     const x = d3.scaleLinear()
         .domain(d3.extent(color.domain()))
-        .rangeRound([600, 860]);
+        .range([600, 860]);
 
     const svg = d3.select('#map').append('svg')
         .attr('width', width)
@@ -57,6 +57,7 @@ function renderD3() {
     const g = svg.append("g")
         .attr("transform", "translate(0,40)");
 
+    // reference: color legend
     g.selectAll("rect")
     .data(color.range().map(d => color.invertExtent(d)))
     .enter().append("rect")
@@ -65,36 +66,43 @@ function renderD3() {
         .attr("width", d => x(d[1]) - x(d[0]))
         .attr("fill", d => color(d[0]));
 
+    // reference: text legend
     g.append("text")
-        .attr("class", "caption")
-        .attr("x", x.range()[0])
+        .attr("class", "legend")
+        .attr("x", x.range()[0] + 40)
         .attr("y", -6)
         .attr("fill", "#000")
         .attr("text-anchor", "start")
         .attr("font-weight", "bold")
         .text(data.title);
 
+    // reference: axis of legend
     g.call(d3.axisBottom(x)
         .tickSize(13)
         .tickFormat(format)
         .tickValues(color.range().slice(1).map(d => color.invertExtent(d)[0])))
-    .select(".domain")
-        .remove();
 
+    // draw counties with tooltip
     svg.append("g")
     .selectAll("path")
     .data(topojson.feature(us, us.objects.counties).features)
-    .enter().append("path")
+    .enter()
+    .append("path")
         .attr("fill", d => color(data.get(d.id)))
         .attr("d", path)
+        .attr('class','county')
     .append("title")
-        .text(d => format(data.get(d.id)));
-
+        .text(d => format(data.get(d.id))+'%')
+        .attr('class','tooltip');
+        
+    // draw states
     svg.append("path")
         .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+        .attr("class", "county")
         .attr("fill", "none")
         .attr("stroke", "white")
         .attr("stroke-linejoin", "round")
         .attr("d", path);
+
 
 }
