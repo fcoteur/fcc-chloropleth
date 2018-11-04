@@ -1,6 +1,5 @@
-let data = new Map();
-let us = {};
-data.title = "% with a bachelor's degree or higher";
+let data = [];
+let countryTopo = {};
 
 Promise.all([loadTopo(), loadData()])
    .then(
@@ -13,9 +12,7 @@ function loadData() {
         req1.send();
         req1.onload = () => {
             let json = JSON.parse(req1.responseText);
-            let map = json.map(d => {
-                data.set(d.fips, d.bachelorsOrHigher)
-            });
+            data = json.slice();
             resolve('loadData done!');
         }
     })
@@ -27,15 +24,17 @@ function loadTopo() {
         req2.send();
         req2.onload = () => {
             let json = JSON.parse(req2.responseText);
-            us = Object.assign({},json);
+            countryTopo = Object.assign({},json);
             resolve('loadTopo done!');
         }  
     })
 }
+
 function renderD3() {
     const width = 960;
     const height = 600;
     const path = d3.geoPath();
+console.log(data,countryTopo)
 
     const color = d3.scaleQuantize()
         .domain([1, 100])
@@ -61,6 +60,7 @@ function renderD3() {
     g.selectAll("rect")
     .data(color.range().map(d => color.invertExtent(d)))
     .enter().append("rect")
+    .attr("id", "legend")
         .attr("height", 8)
         .attr("x", d => x(d[0]))
         .attr("width", d => x(d[1]) - x(d[0]))
@@ -68,13 +68,12 @@ function renderD3() {
 
     // reference: text legend
     g.append("text")
-        .attr("class", "legend")
         .attr("x", x.range()[0] + 40)
         .attr("y", -6)
         .attr("fill", "#000")
         .attr("text-anchor", "start")
         .attr("font-weight", "bold")
-        .text(data.title);
+        .text('% of >25y population with higher education');
 
     // reference: axis of legend
     g.call(d3.axisBottom(x)
@@ -85,24 +84,49 @@ function renderD3() {
     // draw counties with tooltip
     svg.append("g")
     .selectAll("path")
-    .data(topojson.feature(us, us.objects.counties).features)
+    .data(topojson.feature(countryTopo, countryTopo.objects.counties).features)
     .enter()
     .append("path")
-        .attr("fill", d => color(data.get(d.id)))
+        .attr("fill", d => { 
+            let result = data.filter( obj => {
+                return (obj.fips == d.id);
+            });
+            if(result[0]){
+              return color(result[0].bachelorsOrHigher)
+            }
+            return color(0)
+           })        
         .attr("d", path)
         .attr('class','county')
+        .attr("data-fips", d => d.id)
+        .attr("data-education", d => {
+            var result = data.filter( obj => {
+              return obj.fips == d.id;
+            });
+            if(result[0]){
+              return result[0].bachelorsOrHigher
+            }
+            return 0
+           }
+    )  
     .append("title")
-        .text(d => format(data.get(d.id))+'%')
-        .attr('class','tooltip');
+        .text(d => {
+            var result = data.filter( obj => {
+              return obj.fips == d.id;
+            });
+            if(result[0]){
+              return result[0].bachelorsOrHigher + '%'
+            }
+            return 0
+           })
+        .attr('id','tooltip');
         
     // draw states
     svg.append("path")
-        .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
-        .attr("class", "county")
+        .datum(topojson.mesh(countryTopo, countryTopo.objects.states, (a, b) => a !== b))
+        .attr("class", "states")
         .attr("fill", "none")
         .attr("stroke", "white")
         .attr("stroke-linejoin", "round")
         .attr("d", path);
-
-
-}
+    }
