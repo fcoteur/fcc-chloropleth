@@ -53,6 +53,12 @@ console.log(data,countryTopo)
         .style("width", "100%")
         .style("height", "auto");
 
+    const body = d3.select('body')
+
+    const tooltip = body.append("div")
+        .attr("id", "tooltip")
+        .style("opacity", 0);
+
     const g = svg.append("g")
         .attr("transform", "translate(0,40)");
 
@@ -108,19 +114,33 @@ console.log(data,countryTopo)
             }
             return 0
            }
-    )  
-    .append("title")
-        .text(d => {
-            var result = data.filter( obj => {
-              return obj.fips == d.id;
-            });
-            if(result[0]){
-              return result[0].bachelorsOrHigher + '%'
-            }
-            return 0
-           })
-        .attr('id','tooltip');
-        
+        )
+        .on("mouseover", d => {      
+            tooltip
+            .style("opacity", 1) 
+            .html(() => {
+                var result = data.filter( obj => {
+                  return obj.fips == d.id;
+                });
+                if(result[0]){
+                  return result[0].area_name+ ' ' + result[0].bachelorsOrHigher + '%'
+                }
+                return 0
+               })  
+            .style("left", (d3.event.pageX + 10) + "px") 
+            .style("top", (d3.event.pageY - 30) + "px")
+            .attr("data-education", () => {
+                var result = data.filter( obj => {
+                    return obj.fips == d.id;
+                });
+                if(result[0]){
+                    return result[0].bachelorsOrHigher
+                }
+                return 0
+                });
+            })
+        .on("mouseout", d => {tooltip.style("opacity", 0);});
+    
     // draw states
     svg.append("path")
         .datum(topojson.mesh(countryTopo, countryTopo.objects.states, (a, b) => a !== b))
